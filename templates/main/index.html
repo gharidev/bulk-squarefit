@@ -61,6 +61,8 @@
                     alert("Add images!");
                     return;
                 }
+                this.loading = true;
+                let initial = 0, final = this.$refs.images.files.length;
                 for (let image of this.$refs.images.files) {
                     let data = new FormData()
                     data.append('image', image);
@@ -85,6 +87,10 @@
                         })
                         .catch(err => {
                             this.errors.push(err.message);
+                        }).then(() => {
+                            initial++;
+                            if (initial == final)
+                                this.loading = false;
                         });
                 }
             }
