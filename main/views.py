@@ -1,4 +1,3 @@
-from turtle import color
 from django.http import HttpResponseBadRequest, HttpResponse
 from django.shortcuts import render
 from django.views.generic import View
