@@ -1,0 +1,94 @@
+{%extends "main/base.html"%}
+
+{%block content%}
+<div id="app"></div>
+
+<template id="app-template">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-6">
+            <h3 class="text-center">Bulk SquareFit</h3>
+            <div class="card my-3">
+                <div class="card-header">
+                    <h5 class="card-title m-0">Select Images</h5>
+                </div>
+                <div class="card-body">
+                    <div>
+                        <input ref="images" class="form-control" type="file" id="images-input" accept="image/*"
+                            @change="onChange" multiple>
+                    </div>
+                    <template v-if="fileList.length>0">
+                        <div class="text-muted mt-3 mb-2">Preview</div>
+                        <div class="row align-items-center">
+                            <div class="col-3 border text-center p-0" v-for="(file, index) in fileList" :key="index">
+                                <img :src="file" alt="" class="img-fluid" style="height: 100px;object-fit: contain;">
+                            </div>
+                        </div>
+                    </template>
+                </div>
+                <div class="card-footer">
+                    <button class="btn btn-primary" :disabled="loading" @click="onSubmit">Square Fit'em</button>
+                </div>
+            </div>
+            <ul class="list-group list-group-flush" v-if="errors">
+                <li class="list-group-item text-danger" v-for="(error, index) in errors" :key="index">error</li>
+            </ul>
+        </div>
+    </div>
+</template>
+{%endblock%}
+
+{%block extra_js%}
+<script>
+    new Vue({
+        el: '#app',
+        delimiters: ['[[', ']]'],
+        template: '#app-template',
+        data: {
+            loading: false,
+            errors: [],
+            fileList: []
+        },
+        methods: {
+            onChange(e) {
+                console.log(e.target.files);
+                this.fileList = [];
+                for (let img of e.target.files) {
+                    this.fileList.push(URL.createObjectURL(img));
+                }
+            },
+            onSubmit() {
+                if (!this.$refs.images?.files?.length) {
+                    alert("Add images!");
+                    return;
+                }
+                for (let image of this.$refs.images.files) {
+                    let data = new FormData()
+                    data.append('image', image);
+                    fetch('', {
+                        method: 'POST',
+                        body: data,
+                    })
+                        .then(response => {
+                            if (response.ok)
+                                return response.blob();
+                            else
+                                throw new Error(response.statusText)
+                        })
+                        .then(blob => {
+                            var url = window.URL.createObjectURL(blob);
+                            var a = document.createElement('a');
+                            a.href = url;
+                            a.download = `SquareFit ${new Date().getTime().toString(32)}.jpeg`;
+                            document.body.appendChild(a);
+                            a.click();
+                            a.remove();
+                        })
+                        .catch(err => {
+                            this.errors.push(err.message);
+                        });
+                }
+            }
+        }
+    })
+</script>
+{%endblock%}
