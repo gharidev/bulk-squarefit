@@ -1,3 +1,4 @@
+from turtle import color
 from django.http import HttpResponseBadRequest, HttpResponse
 from django.shortcuts import render
 from django.views.generic import View
@@ -20,7 +21,15 @@ class SquareFitView(View):
         image = request.FILES.get('image')
         if not image:
             return HttpResponseBadRequest()
-        reponse_img = square_fit_image(image)
+        color = request.GET.get('color', 'ffffff')
+        radius = None
+        if not color:
+            return HttpResponseBadRequest()
+        if color == 'blur':
+            radius = int(request.GET.get('radius', '8'))
+            if not radius:
+                return HttpResponseBadRequest()
+        reponse_img = square_fit_image(image, color=color, radius=radius)
         response = HttpResponse(content_type='image/jpg')
         reponse_img.save(response, "JPEG")
         return response
