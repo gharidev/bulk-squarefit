@@ -1,5 +1,14 @@
 {%extends "main/base.html"%}
 
+{%block extra_css%}
+<style>
+    .bg-light-grey {
+        background-color: #CCC;
+    }
+</style>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+{%endblock%}
+
 {%block content%}
 <div id="app"></div>
 
@@ -70,10 +79,47 @@
                     </div>
                 </div>
             </div>
+            <template v-if="completed.length>0">
+                <h5>Completed</h5>
+                <ul class="list-group mb-3">
+                    <li class="list-group-item d-flex justify-content-between align-items-center"
+                        v-for="(image, index) in completed" :key="index">
+                        <img :src="image.url" alt="" style="height: 50px;width: 50px;object-fit: cover;" class="border">
+                        <button class="btn btn-link" @click="previewImage(index)">Preview</button>
+                        <button class="btn btn-sm btn-outline-success" @click="downloadImage(index)">Download
+                            [[image.downloaded?'again':'']]</button>
+                    </li>
+                </ul>
+                <button class="btn btn-primary d-block mx-auto mb-2" @click="bulkDownload()">Download all</button>
+                <button class="btn btn-outline-primary d-block mx-auto" @click="bulkDownload(false)"
+                    v-if="completed.some(i=>i.downloaded)&&!(completed.filter(i=>i.downloaded).length==completed.length)">Download
+                    remaining</button>
+            </template>
             <ul class="list-group list-group-flush" v-if="errors">
                 <li class="list-group-item text-danger" v-for="(error, index) in errors" :key="index">[[index+1]])
                     [[error]]</li>
             </ul>
+        </div>
+
+
+        <!-- Modal -->
+        <div class="modal fade" id="imagePreviewModal" tabindex="-1" aria-labelledby="imagePreviewModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content" v-if="previewIndex!=null">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="imagePreviewModalLabel">Image Preview</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <img :src="completed[previewIndex].url" alt="" class="img-fluid border">
+                    </div>
+                    <div class="modal-footer justify-content-center">
+                        <button type="button" class="btn btn-primary" @click="downloadImage(previewIndex)">Download
+                            [[completed[previewIndex].downloaded?'again':'']]</button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </template>
@@ -89,6 +135,7 @@
             loading: false,
             errors: [],
             fileList: [],
+            previewIndex: null,
             background: {
                 option: 'custom',
                 selected: '#ffffff',
@@ -97,11 +144,25 @@
             progress: {
                 total: 0,
                 loaded: 0
-            }
+            },
+            dim: 2048,
+            ctx: null,
+            completed: [],
+            suffix: new Date().getTime().toString(32)
         },
         computed: {
             percentage() {
                 return this.progress.loaded * 100 / (this.progress.total || 1);
+            }
+        },
+        watch: {
+            'progress.loaded': function (loaded, _) {
+                if (loaded == this.progress.total) {
+                    setTimeout(() => {
+                        this.loading = false;
+                        this.removeSelectedFiles();
+                    }, 1000);
+                }
             }
         },
         methods: {
@@ -116,6 +177,84 @@
                 el.value = null;
                 this.onChange({ target: el });
             },
+            addToCompleted(url) {
+                this.completed.push({ url, downloaded: false })
+            },
+            previewImage(index) {
+                this.previewIndex = index;
+                new bootstrap.Modal(document.getElementById('imagePreviewModal')).show()
+            },
+            downloadImage(index) {
+                const image = this.completed[index];
+                var a = document.createElement('a');
+                a.href = image.url;
+                a.download = `SquareFit ${this.suffix} ${index + 1}.jpeg`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                image.downloaded = true;
+            },
+            bulkDownload(all = true) {
+                this.completed.forEach((img, index) => {
+                    if (all || !img.downloaded)
+                        this.downloadImage(index);
+                });
+            },
+            handleOnline(image, params) {
+                let data = new FormData();
+                data.append('image', image);
+                fetch(`?${params.toString()}`, {
+                    method: 'POST',
+                    body: data,
+                })
+                    .then(response => {
+                        if (response.ok)
+                            return response.blob();
+                        else
+                            throw new Error(response.statusText)
+                    })
+                    .then(blob => {
+                        var url = window.URL.createObjectURL(blob);
+                        this.addToCompleted(url);
+                    })
+                    .catch(err => {
+                        this.errors.push(err.message);
+                    })
+                    .then(() => {
+                        this.progress.loaded++;
+                    });
+            },
+            handleOffline(file) {
+                const reader = new FileReader();
+                reader.addEventListener("load", () => {
+                    const image = new Image();
+                    image.src = reader.result;
+                    image.onload = () => {
+                        let x = 0, y = 0;
+                        if (image.height > image.width) {
+                            image.width = image.width / (image.height / this.dim)
+                            image.height = this.dim;
+                            x = (this.dim - image.width) / 2;
+                            y = 0;
+                        }
+                        else {
+                            image.height = image.height / (image.width / this.dim)
+                            image.width = this.dim;
+                            x = 0;
+                            y = (this.dim - image.height) / 2;
+                        }
+                        this.ctx.beginPath();
+                        this.ctx.rect(0, 0, this.dim, this.dim);
+                        this.ctx.fillStyle = this.background.selected;
+                        this.ctx.fill();
+                        this.ctx.drawImage(image, x, y, image.width, image.height);
+                        // this.outputUrl = this.ctx.canvas.toDataURL("image/jpg");
+                        this.progress.loaded++;
+                        this.addToCompleted(this.ctx.canvas.toDataURL("image/jpeg"));
+                    }
+                }, false);
+                reader.readAsDataURL(file);
+            },
             onSubmit() {
                 if (!this.$refs.images?.files?.length) {
                     alert("Add images!");
@@ -125,45 +264,27 @@
                 this.progress.loaded = 0;
                 this.progress.total = this.$refs.images.files.length;
                 const color = this.background.option == 'custom' ? this.background.selected.replace('#', "") : this.background.option;
-                const params = new URLSearchParams()
-                params.append('color', color)
-                if (color == 'blur')
-                    params.append('radius', this.background.radius)
-                for (let image of this.$refs.images.files) {
-                    let data = new FormData()
-                    data.append('image', image);
-                    fetch(`?${params.toString()}`, {
-                        method: 'POST',
-                        body: data,
-                    })
-                        .then(response => {
-                            if (response.ok)
-                                return response.blob();
-                            else
-                                throw new Error(response.statusText)
-                        })
-                        .then(blob => {
-                            var url = window.URL.createObjectURL(blob);
-                            var a = document.createElement('a');
-                            a.href = url;
-                            a.download = `SquareFit ${new Date().getTime().toString(32)}.jpeg`;
-                            document.body.appendChild(a);
-                            a.click();
-                            a.remove();
-                        })
-                        .catch(err => {
-                            this.errors.push(err.message);
-                        }).then(() => {
-                            this.progress.loaded++;
-                            if (this.progress.loaded == this.progress.total) {
-                                setTimeout(() => {
-                                    this.loading = false;
-                                    this.removeSelectedFiles();
-                                }, 1000);
-                            }
-                        });
+
+                if (this.background.option == 'custom') {
+                    for (let image of this.$refs.images.files) {
+                        this.handleOffline(image)
+                    }
+                } else {
+                    for (let image of this.$refs.images.files) {
+                        const params = new URLSearchParams()
+                        params.append('color', color)
+                        if (color == 'blur')
+                            params.append('radius', this.background.radius)
+                        this.handleOnline(image, params)
+                    }
                 }
             }
+        },
+        mounted() {
+            const canvas = document.createElement('canvas');
+            canvas.height = this.dim;
+            canvas.width = this.dim;
+            this.ctx = canvas.getContext('2d');
         }
     })
 </script>
