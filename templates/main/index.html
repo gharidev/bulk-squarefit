@@ -27,6 +27,14 @@
                         <div class="mt-2">
                             <p class="mb-2"><strong>Background</strong></p>
                             <div class="form-check">
+                                <input class="form-check-input" type="radio" name="background_opt" id="background-opt-2"
+                                    v-model="background.option" value="automatic">
+                                <label class="form-check-label" for="background-opt-2">
+                                    Automatic color <br><span class="text-muted small">Sets background color
+                                        automatically</span>
+                                </label>
+                            </div>
+                            <div class="form-check">
                                 <input class="form-check-input" type="radio" name="background_opt" id="background-opt-1"
                                     v-model="background.option" value="custom">
                                 <label class="form-check-label" for="background-opt-1">
@@ -35,14 +43,6 @@
                                         <input type="color" id="background-color" v-model="background.selected"
                                             :disabled="background.option!='custom'">
                                     </div>
-                                </label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="background_opt" id="background-opt-2"
-                                    v-model="background.option" value="automatic">
-                                <label class="form-check-label" for="background-opt-2">
-                                    Automatic color <br><span class="text-muted small">Sets background color
-                                        automatically</span>
                                 </label>
                             </div>
                             <!-- <div class="form-check">
@@ -145,7 +145,7 @@
             fileList: [],
             previewIndex: null,
             background: {
-                option: 'custom',
+                option: 'automatic',
                 selected: '#ffffff',
                 radius: 8
             },
