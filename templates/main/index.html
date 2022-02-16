@@ -39,12 +39,20 @@
                             </div>
                             <div class="form-check">
                                 <input class="form-check-input" type="radio" name="background_opt" id="background-opt-2"
+                                    v-model="background.option" value="automatic">
+                                <label class="form-check-label" for="background-opt-2">
+                                    Automatic color <br><span class="text-muted small">Sets background color
+                                        automatically</span>
+                                </label>
+                            </div>
+                            <!-- <div class="form-check">
+                                <input class="form-check-input" type="radio" name="background_opt" id="background-opt-2"
                                     v-model="background.option" value="dominant">
                                 <label class="form-check-label" for="background-opt-2">
                                     Dominant color <br><span class="text-muted small">Dominant color from the
                                         image</span>
                                 </label>
-                            </div>
+                            </div> -->
                             <div class="form-check">
                                 <input class="form-check-input" type="radio" name="background_opt" id="background-opt-3"
                                     v-model="background.option" value="blur">
@@ -200,6 +208,43 @@
                         this.downloadImage(index);
                 });
             },
+            componentToHex(c) {
+                var hex = c.toString(16);
+                return hex.length == 1 ? "0" + hex : hex;
+            },
+            rgbToHex(r, g, b) {
+                return "#" + this.componentToHex(r) + this.componentToHex(g) + this.componentToHex(b);
+            },
+            getAutomaticColor(image) {
+                const canvas = document.createElement('canvas');
+                canvas.height = image.height;
+                canvas.width = image.width;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(image, 0, 0);
+                const cumPixelData = {};
+                if (image.height > image.width) {
+                    const pixelData = new Uint8ClampedArray([...ctx.getImageData(0, 0, 1, image.height).data, ...ctx.getImageData(image.width - 1, 0, 1, image.height).data])
+                    for (let i = 0; i < image.height * 4 * 2; i = i + 4) {
+                        const hex = this.rgbToHex(pixelData[i], pixelData[i + 1], pixelData[i + 2]);
+                        cumPixelData[hex] = (cumPixelData[hex] ?? 0) + 1;
+                    }
+                } else {
+                    const pixelData = new Uint8ClampedArray([...ctx.getImageData(0, 0, image.width, 1).data, ...ctx.getImageData(0, image.height - 1, image.width, 1).data])
+                    for (let i = 0; i < image.width * 4 * 2; i = i + 4) {
+                        const hex = this.rgbToHex(pixelData[i], pixelData[i + 1], pixelData[i + 2]);
+                        cumPixelData[hex] = (cumPixelData[hex] ?? 0) + 1;
+                    }
+                }
+                let occurance = -1, pickedColor;
+                console.log(cumPixelData);
+                for (let [key, value] of Object.entries(cumPixelData)) {
+                    if (value > occurance) {
+                        pickedColor = key;
+                        occurance = value;
+                    }
+                }
+                return pickedColor;
+            },
             handleOnline(image, params) {
                 let data = new FormData();
                 data.append('image', image);
@@ -230,6 +275,11 @@
                     const image = new Image();
                     image.src = reader.result;
                     image.onload = () => {
+                        let color = this.background.selected;
+                        if (this.background.option == 'automatic') {
+                            color = this.getAutomaticColor(image);
+                            console.log(color);
+                        }
                         let x = 0, y = 0;
                         if (image.height > image.width) {
                             image.width = image.width / (image.height / this.dim)
@@ -245,7 +295,7 @@
                         }
                         this.ctx.beginPath();
                         this.ctx.rect(0, 0, this.dim, this.dim);
-                        this.ctx.fillStyle = this.background.selected;
+                        this.ctx.fillStyle = color;
                         this.ctx.fill();
                         this.ctx.drawImage(image, x, y, image.width, image.height);
                         // this.outputUrl = this.ctx.canvas.toDataURL("image/jpg");
@@ -265,7 +315,7 @@
                 this.progress.total = this.$refs.images.files.length;
                 const color = this.background.option == 'custom' ? this.background.selected.replace('#', "") : this.background.option;
 
-                if (this.background.option == 'custom') {
+                if (['custom', 'automatic'].includes(this.background.option)) {
                     for (let image of this.$refs.images.files) {
                         this.handleOffline(image)
                     }
