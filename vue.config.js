@@ -9,6 +9,6 @@ module.exports = defineConfig({
       title: 'Bulk SquareFit',
     },
   },
-  outputDir: path.resolve(__dirname, "../docs/"),
+  outputDir: path.resolve(__dirname, "./docs/"),
   publicPath: '/bulk-squarefit/'
 })
