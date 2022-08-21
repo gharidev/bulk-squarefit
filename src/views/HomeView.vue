@@ -1,5 +1,10 @@
 <template>
     <BaseLayout>
+        <div class="progress convert-progress" v-if="loading">
+            <div class="progress-bar" :class="{ 'bg-success': percentage == 100 }" role="progressbar"
+                :style="{ 'width': percentage + '%' }" :aria-valuenow="percentage" aria-valuemin="0"
+                aria-valuemax="100"></div>
+        </div>
         <div class="row justify-content-center">
             <div class="col-12 col-md-6">
                 <h3 class="text-center">Bulk SquareFit</h3>
@@ -68,13 +73,8 @@
                         </template>
                     </div>
                     <div class="card-footer">
-                        <button class="btn btn-primary" :disabled="loading" @click="onSubmit" v-if="!loading">Square
+                        <button class="btn btn-primary" :disabled="loading" @click="onSubmit">Square
                             Fit'em</button>
-                        <div class="progress" v-else>
-                            <div class="progress-bar" :class="{ 'bg-success': percentage == 100 }" role="progressbar"
-                                :style="{ 'width': percentage + '%' }" :aria-valuenow="percentage" aria-valuemin="0"
-                                aria-valuemax="100"></div>
-                        </div>
                     </div>
                 </div>
                 <template v-if="completed.length > 0">
@@ -271,27 +271,46 @@ export default {
                 image.src = reader.result;
                 image.onload = () => {
                     let color = this.background.selected;
-                    if (this.background.option == 'automatic') {
+                    if (['automatic', 'blur'].includes(this.background.option)) {
                         color = this.getAutomaticColor(image);
                     }
+                    const imgHeight = image.height, imgWidth = image.width;
+                    this.ctx.beginPath();
+                    this.ctx.rect(0, 0, this.dim, this.dim);
+                    if (this.background.option === 'blur') {
+                        this.ctx.fillStyle = color;
+                        this.ctx.fill();
+                        this.ctx.filter = `blur(${this.background.radius}px)`;
+                        let bgImgWidth, bgImgHeight;
+                        if (imgWidth > imgHeight) {
+                            bgImgWidth = imgWidth * (this.dim / imgHeight);
+                            bgImgHeight = this.dim;
+                            this.ctx.drawImage(image, ((this.dim - bgImgWidth) / 2), 0, bgImgWidth, bgImgHeight);
+                        } else {
+                            bgImgHeight = imgHeight * (this.dim / imgWidth);
+                            bgImgWidth = this.dim;
+                            this.ctx.drawImage(image, 0, ((this.dim - bgImgHeight) / 2), bgImgWidth, bgImgHeight);
+                        }
+                        this.ctx.filter = `blur(0px)`;
+                    } else {
+                        this.ctx.fillStyle = color;
+                        this.ctx.fill();
+                    }
                     let x = 0, y = 0;
-                    if (image.height > image.width) {
-                        image.width = image.width / (image.height / this.dim)
-                        image.height = this.dim;
-                        x = (this.dim - image.width) / 2;
+                    let fgImgWidth, fgImgHeight;
+                    if (imgHeight > imgWidth) {
+                        fgImgWidth = imgWidth / (imgHeight / this.dim)
+                        fgImgHeight = this.dim;
+                        x = (this.dim - fgImgWidth) / 2;
                         y = 0;
                     }
                     else {
-                        image.height = image.height / (image.width / this.dim)
-                        image.width = this.dim;
+                        fgImgHeight = imgHeight / (imgWidth / this.dim)
+                        fgImgWidth = this.dim;
                         x = 0;
-                        y = (this.dim - image.height) / 2;
+                        y = (this.dim - fgImgHeight) / 2;
                     }
-                    this.ctx.beginPath();
-                    this.ctx.rect(0, 0, this.dim, this.dim);
-                    this.ctx.fillStyle = color;
-                    this.ctx.fill();
-                    this.ctx.drawImage(image, x, y, image.width, image.height);
+                    this.ctx.drawImage(image, x, y, fgImgWidth, fgImgHeight);
                     // this.outputUrl = this.ctx.canvas.toDataURL("image/jpg");
                     this.progress.loaded++;
                     this.addToCompleted(this.ctx.canvas.toDataURL("image/jpeg"));
@@ -307,21 +326,21 @@ export default {
             this.loading = true;
             this.progress.loaded = 0;
             this.progress.total = this.$refs.images.files.length;
-            const color = this.background.option == 'custom' ? this.background.selected.replace('#', "") : this.background.option;
+            // const color = this.background.option == 'custom' ? this.background.selected.replace('#', "") : this.background.option;
 
-            if (['custom', 'automatic'].includes(this.background.option)) {
-                for (let image of this.$refs.images.files) {
-                    this.handleOffline(image)
-                }
-            } else {
-                for (let image of this.$refs.images.files) {
-                    const params = new URLSearchParams()
-                    params.append('color', color)
-                    if (color == 'blur')
-                        params.append('radius', this.background.radius)
-                    this.handleOnline(image, params)
-                }
+            // if (['custom', 'automatic'].includes(this.background.option)) {
+            for (let image of this.$refs.images.files) {
+                this.handleOffline(image)
             }
+            // } else {
+            //     for (let image of this.$refs.images.files) {
+            //         const params = new URLSearchParams()
+            //         params.append('color', color)
+            //         if (color == 'blur')
+            //             params.append('radius', this.background.radius)
+            //         this.handleOnline(image, params)
+            //     }
+            // }
         }
     },
     mounted() {
@@ -334,4 +353,12 @@ export default {
 }
 </script>
 <style>
+.convert-progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 999;
+    width: 100vw;
+    height: 5px;
+}
 </style>
