@@ -2,7 +2,9 @@ const { defineConfig } = require('@vue/cli-service')
 const path = require("path");
 
 module.exports = defineConfig({
-  transpileDependencies: true,
+  transpileDependencies: [
+    'vuetify'
+  ],
   pages: {
     index: {
       entry: 'src/main.js',
@@ -10,5 +12,5 @@ module.exports = defineConfig({
     },
   },
   outputDir: path.resolve(__dirname, "./docs/"),
-  publicPath: '/bulk-squarefit/'
+  publicPath: '/bulk-squarefit/',
 })

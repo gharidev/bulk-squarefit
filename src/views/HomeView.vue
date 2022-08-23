@@ -1,145 +1,204 @@
 <template>
-    <BaseLayout>
-        <div class="progress convert-progress" v-if="loading">
-            <div class="progress-bar" :class="{ 'bg-success': percentage == 100 }" role="progressbar"
-                :style="{ 'width': percentage + '%' }" :aria-valuenow="percentage" aria-valuemin="0"
-                aria-valuemax="100"></div>
+    <div style="min-height: 100%;">
+        <div class="convert-progress" v-if="loading">
+            <v-progress-linear v-model="percentage" buffer-value="100" color="success lighten-2">
+            </v-progress-linear>
         </div>
-        <div class="row justify-content-center">
-            <div class="col-12 col-md-6">
-                <h3 class="text-center">Bulk SquareFit</h3>
-                <div class="card my-3">
-                    <div class="card-header">
-                        <h5 class="card-title m-0">Select Images</h5>
-                    </div>
-                    <div class="card-body">
-                        <div>
-                            <input ref="images" class="form-control" type="file" id="images-input" accept="image/*"
-                                @change="onChange" multiple>
-                            <div class="mt-2">
-                                <p class="mb-2"><strong>Background</strong></p>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="background_opt"
-                                        id="background-opt-2" v-model="background.option" value="automatic">
-                                    <label class="form-check-label" for="background-opt-2">
-                                        Automatic color <br><span class="text-muted small">Sets background color
-                                            automatically</span>
-                                    </label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="background_opt"
-                                        id="background-opt-1" v-model="background.option" value="custom">
-                                    <label class="form-check-label" for="background-opt-1">
-                                        Custom color
-                                        <div class="mt-2 d-flex align-items-center">
-                                            <input type="color" id="background-color" v-model="background.selected"
-                                                :disabled="background.option != 'custom'">
-                                        </div>
-                                    </label>
-                                </div>
-                                <!-- <div class="form-check">
-                                <input class="form-check-input" type="radio" name="background_opt" id="background-opt-2"
-                                    v-model="background.option" value="dominant">
-                                <label class="form-check-label" for="background-opt-2">
-                                    Dominant color <br><span class="text-muted small">Dominant color from the
-                                        image</span>
-                                </label>
-                            </div> -->
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="background_opt"
-                                        id="background-opt-3" v-model="background.option" value="blur">
-                                    <label class="form-check-label" for="background-opt-3">
-                                        Blurred <br><span class="text-muted small">Source image blurred in
-                                            background</span>
-                                        <div>
-                                            <label for="blur-radius" class="form-label">Blur radius</label>
-                                            <input type="range" class="form-range" id="blur-radius" min="1" max="50"
-                                                v-model="background.radius" :disabled="background.option != 'blur'">
-                                        </div>
-                                    </label>
+        <v-container>
+            <v-row justify="center">
+                <v-col cols="12" md="6">
+                    <h3 class="text-center display-1">Bulk SquareFit</h3>
+                    <v-card class="my-3 rounded-xl">
+                        <v-card-title class="justify-center">
+                            Select Images
+                        </v-card-title>
+                        <v-card-text>
+                            <div>
+                                <v-file-input ref="images" color="primary accent-4" counter label="File input" multiple
+                                    placeholder="Select your files" prepend-icon="mdi-paperclip" outlined rounded
+                                    :show-size="1000" v-model="files" accept="image/*" class="file-input">
+                                    <template v-slot:selection="{ index, text }">
+                                        <v-chip v-if="index < 2" color="primary accent-4" dark label small>
+                                            {{ text }}
+                                        </v-chip>
+                                        <span v-else-if="index === 2"
+                                            class="text-overline grey--text text--darken-3 mx-2">
+                                            +{{ files.length - 2 }} File(s)
+                                        </span>
+                                    </template>
+                                </v-file-input>
+
+                                <div class="mt-2">
+                                    <p class="mb-2 title">Background</p>
+
+                                    <v-radio-group v-model="background.option">
+                                        <v-radio value="transparent">
+                                            <template v-slot:label>
+                                                <div>Transparent <span class="caption">Sets the background as
+                                                        transparent.</span></div>
+                                            </template>
+                                        </v-radio>
+                                        <v-radio value="automatic">
+                                            <template v-slot:label>
+                                                <div>Automatic color <span class="caption">Sets background color
+                                                        automatically.</span></div>
+                                            </template>
+                                        </v-radio>
+                                        <v-radio value="custom">
+                                            <template v-slot:label>
+                                                <div>
+                                                    <p class="mb-2">Custom color</p>
+                                                    <v-color-picker :disabled="background.option != 'custom'"
+                                                        dot-size="25" hide-inputs hide-mode-switch mode="hexa"
+                                                        swatches-max-height="200" v-model="background.selected">
+                                                    </v-color-picker>
+                                                </div>
+                                            </template>
+                                        </v-radio>
+                                        <v-radio value="blur">
+                                            <template v-slot:label>
+                                                <div>
+                                                    Blurred <span class="caption">Source image blurred in
+                                                        background.</span>
+                                                    <div>
+                                                        <v-slider label="Blur radius" max="50" min="1"
+                                                            v-model="background.radius"
+                                                            :disabled="background.option != 'blur'"
+                                                            class="blur-range-slider">
+                                                        </v-slider>
+                                                    </div>
+                                                </div>
+                                            </template>
+                                        </v-radio>
+                                    </v-radio-group>
+
                                 </div>
                             </div>
-                        </div>
-                        <template v-if="fileList.length > 0">
-                            <hr>
-                            <div class="text-muted mb-2">Preview</div>
-                            <div class="row align-items-center">
-                                <div class="col-3 border text-center p-0" v-for="(file, index) in fileList"
-                                    :key="index">
-                                    <img :src="file" alt="" class="img-fluid"
-                                        style="height: 100px;object-fit: contain;">
-                                </div>
+                            <!-- <template v-if="files.length > 0">
+                                <div class="text-muted mb-2 title">Preview</div>
+                                <v-row align="center">
+                                    <v-col cols="3" class="border text-center p-0" v-for="(file, index) in files"
+                                        :key="index">
+                                        <img :src="file" alt="" style="height: 100px;object-fit: contain;">
+                                    </v-col>
+                                </v-row>
+                            </template> -->
+                            <div class="text-center">
+                                <v-btn color="primary" :disabled="loading || files.length == 0" @click="onSubmit"
+                                    rounded>Square Fit'em</v-btn>
                             </div>
-                        </template>
-                    </div>
-                    <div class="card-footer">
-                        <button class="btn btn-primary" :disabled="loading" @click="onSubmit">Square
-                            Fit'em</button>
-                    </div>
-                </div>
-                <template v-if="completed.length > 0">
-                    <h5>Completed</h5>
-                    <ul class="list-group mb-3">
-                        <li class="list-group-item d-flex justify-content-between align-items-center"
-                            v-for="(image, index) in completed" :key="index">
-                            <img :src="image.url" alt="" style="height: 50px;width: 50px;object-fit: cover;"
-                                class="border">
-                            <button class="btn btn-link" @click="previewImage(index)">Preview</button>
-                            <button class="btn btn-sm btn-outline-success" @click="downloadImage(index)">Download
-                                {{ image.downloaded ? 'again' : '' }}</button>
-                        </li>
+                        </v-card-text>
+                    </v-card>
+                    <template v-if="completed.length > 0">
+                        <p class="title mb-2">Completed</p>
+                        <v-list class="rounded-xl" rounded>
+                            <template v-for="(image, index) in completed">
+                                <v-list-item :key="index" @click="previewImage(index)" class="rounded-xl my-1">
+                                    <v-list-item-avatar rounded="0">
+                                        <v-img :src="image.url"></v-img>
+                                    </v-list-item-avatar>
+                                    <v-spacer></v-spacer>
+                                    <v-btn :color="image.downloaded ? 'success' : 'primary'" rounded
+                                        @click.stop="downloadImage(index)">
+                                        <v-icon dark left>
+                                            {{ image.downloaded ? 'mdi-check' : 'mdi-download' }}
+                                        </v-icon> {{ image.downloaded ? 'Downloaded' : 'Download' }}
+                                    </v-btn>
+                                </v-list-item>
+                                <v-divider :inset="false" :key="index + 'divider'" v-if="index != completed.length - 1">
+                                </v-divider>
+                            </template>
+                        </v-list>
+                        <v-btn class="my-5 mx-auto" block large color="primary" @click="bulkDownload()" rounded>
+                            <v-icon dark left>
+                                mdi-download
+                            </v-icon>Download all
+                        </v-btn>
+                        <v-btn block class="mx-auto mb-4" large color="primary" @click="bulkDownload(false)"
+                            v-if="completed.some(i => i.downloaded) && !(completed.filter(i => i.downloaded).length == completed.length)"
+                            rounded>
+                            <v-icon dark left>
+                                mdi-download
+                            </v-icon>Download
+                            remaining
+                        </v-btn>
+                    </template>
+                    <ul class="list-group list-group-flush" v-if="errors">
+                        <li class="list-group-item text-danger" v-for="(error, index) in errors" :key="index">{{ index +
+                                1
+                        }})
+                            {{ error }}</li>
                     </ul>
-                    <button class="btn btn-primary d-block mx-auto mb-2" @click="bulkDownload()">Download all</button>
-                    <button class="btn btn-outline-primary d-block mx-auto" @click="bulkDownload(false)"
-                        v-if="completed.some(i => i.downloaded) && !(completed.filter(i => i.downloaded).length == completed.length)">Download
-                        remaining</button>
-                </template>
-                <ul class="list-group list-group-flush" v-if="errors">
-                    <li class="list-group-item text-danger" v-for="(error, index) in errors" :key="index">{{ index + 1
-                    }})
-                        {{ error }}</li>
-                </ul>
-            </div>
+                </v-col>
 
 
-            <!-- Modal -->
-            <div class="modal fade" id="imagePreviewModal" tabindex="-1" aria-labelledby="imagePreviewModalLabel"
-                aria-hidden="true">
-                <div class="modal-dialog modal-dialog-centered">
-                    <div class="modal-content" v-if="previewIndex != null">
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="imagePreviewModalLabel">Image Preview</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body">
-                            <img :src="completed[previewIndex].url" alt="" class="img-fluid border">
-                        </div>
-                        <div class="modal-footer justify-content-center">
-                            <button type="button" class="btn btn-primary" @click="downloadImage(previewIndex)">Download
-                                {{ completed[previewIndex].downloaded ? 'again' : '' }}</button>
+                <!-- Modal -->
+                <!-- <div class="modal fade" id="imagePreviewModal" tabindex="-1" aria-labelledby="imagePreviewModalLabel"
+                    aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content" v-if="previewIndex != null">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="imagePreviewModalLabel">Image Preview</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <img :src="completed[previewIndex].url" alt="" class="img-fluid border">
+                            </div>
+                            <div class="modal-footer justify-content-center">
+                                <button type="button" class="btn btn-primary"
+                                    @click="downloadImage(previewIndex)">Download
+                                    {{ completed[previewIndex].downloaded ? 'again' : '' }}</button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
-    </BaseLayout>
+                </div> -->
+
+            </v-row>
+        </v-container>
+
+        <!-- Dialog -->
+        <v-dialog v-model="preview" width="500">
+            <v-sheet rounded class="pa-4 text-center" v-if="previewIndex != null"
+                :set="image = completed[previewIndex]">
+                <v-img :src="image.url" class="mb-3" alt="Square pic result">
+                    <div class="image-controls"
+                        :class="{ 'left-end': previewIndex == 0, 'right-end': previewIndex == completed.length - 1 }">
+                        <div class="left" @click="previewIndex > 0 ? previewIndex-- : null">
+                            <v-icon x-large>mdi-chevron-left</v-icon>
+                        </div>
+                        <div class="right" @click="previewIndex < completed.length - 1 ? previewIndex++ : null">
+                            <v-icon x-large>mdi-chevron-right</v-icon>
+                        </div>
+                    </div>
+                </v-img>
+                <!-- <img :src="" alt="Square pic result" class="mb-3" /> -->
+                <v-btn :color="image.downloaded ? 'success' : 'primary'" rounded @click="downloadImage(previewIndex)">
+                    <v-icon dark left>
+                        {{ image.downloaded ? 'mdi-check' : 'mdi-download' }}
+                    </v-icon> {{ image.downloaded ? 'Downloaded' : 'Download' }}
+                </v-btn>
+            </v-sheet>
+        </v-dialog>
+
+        <!-- Snackbar -->
+        <v-snackbar v-model="snackbar.show" :timeout="snackbar.timeout" :color="snackbar.color">
+            {{ snackbar.msg }}</v-snackbar>
+    </div>
 </template>
 <script>
-import BaseLayout from '@/components/BaseLayout.vue';
 export default {
     name: 'HomeView',
-    components: {
-        BaseLayout
-    },
     data() {
         return {
+            files: [],
             loading: false,
             errors: [],
-            fileList: [],
             previewIndex: null,
+            preview: false,
             background: {
                 option: 'automatic',
-                selected: '#ffffff',
+                selected: '#FFFFFF',
                 radius: 8
             },
             progress: {
@@ -149,7 +208,14 @@ export default {
             dim: 2048,
             ctx: null,
             completed: [],
-            suffix: new Date().getTime().toString(32)
+            suffix: new Date().getTime().toString(32),
+            snackbar: {
+                show: false,
+                timeout: 2000,
+                color: 'success',
+                msg: ''
+            },
+            count: 0,
         }
     },
     computed: {
@@ -161,37 +227,34 @@ export default {
         // eslint-disable-next-line
         'progress.loaded': function (loaded, _) {
             if (loaded == this.progress.total) {
+                this.showSnackBar('Process complete.', 'success');
                 setTimeout(() => {
                     this.loading = false;
-                    this.removeSelectedFiles();
                 }, 1000);
+                this.files = [];
+                window.localStorage.setItem('converted-count', this.count);
             }
         }
     },
     methods: {
-        onChange(e) {
-            this.fileList = [];
-            for (let img of e.target.files) {
-                this.fileList.push(URL.createObjectURL(img));
-            }
+        showSnackBar(msg, color = 'success') {
+            const snackbar = this.snackbar;
+            snackbar.msg = msg;
+            snackbar.color = color;
+            snackbar.show = true;
         },
-        removeSelectedFiles() {
-            const el = this.$refs.images;
-            el.value = null;
-            this.onChange({ target: el });
-        },
-        addToCompleted(url) {
-            this.completed.push({ url, downloaded: false })
+        addToCompleted(url, filename) {
+            this.completed.push({ url, downloaded: false, filename })
         },
         previewImage(index) {
             this.previewIndex = index;
-            new window.bootstrap.Modal(document.getElementById('imagePreviewModal')).show()
+            this.preview = true;
         },
         downloadImage(index) {
             const image = this.completed[index];
             var a = document.createElement('a');
             a.href = image.url;
-            a.download = `SquareFit ${this.suffix} ${index + 1}.jpeg`;
+            a.download = image.filename;
             document.body.appendChild(a);
             a.click();
             a.remove();
@@ -269,17 +332,21 @@ export default {
             reader.addEventListener("load", () => {
                 const image = new Image();
                 image.src = reader.result;
+                const option = this.background.option;
                 image.onload = () => {
                     let color = this.background.selected;
-                    if (['automatic', 'blur'].includes(this.background.option)) {
-                        color = this.getAutomaticColor(image);
-                    }
                     const imgHeight = image.height, imgWidth = image.width;
+                    this.ctx.clearRect(0, 0, this.dim, this.dim);
                     this.ctx.beginPath();
                     this.ctx.rect(0, 0, this.dim, this.dim);
-                    if (this.background.option === 'blur') {
+                    if (['automatic', 'blur'].includes(option)) {
+                        color = this.getAutomaticColor(image);
+                    }
+                    if (['automatic', 'custom', 'blur'].includes(option)) {
                         this.ctx.fillStyle = color;
                         this.ctx.fill();
+                    }
+                    if (option === 'blur') {
                         this.ctx.filter = `blur(${this.background.radius}px)`;
                         let bgImgWidth, bgImgHeight;
                         if (imgWidth > imgHeight) {
@@ -292,9 +359,6 @@ export default {
                             this.ctx.drawImage(image, 0, ((this.dim - bgImgHeight) / 2), bgImgWidth, bgImgHeight);
                         }
                         this.ctx.filter = `blur(0px)`;
-                    } else {
-                        this.ctx.fillStyle = color;
-                        this.ctx.fill();
                     }
                     let x = 0, y = 0;
                     let fgImgWidth, fgImgHeight;
@@ -313,23 +377,25 @@ export default {
                     this.ctx.drawImage(image, x, y, fgImgWidth, fgImgHeight);
                     // this.outputUrl = this.ctx.canvas.toDataURL("image/jpg");
                     this.progress.loaded++;
-                    this.addToCompleted(this.ctx.canvas.toDataURL("image/jpeg"));
+                    this.count++;
+                    const extension = option == 'transparent' ? 'png' : 'jpeg';
+                    this.addToCompleted(this.ctx.canvas.toDataURL(`image/${extension}`), `Bulk-Squarefit ${new Date().toISOString().slice(0, 10)}-${this.count}.${extension}`);
                 }
             }, false);
             reader.readAsDataURL(file);
         },
         onSubmit() {
-            if (!this.$refs.images?.files?.length) {
-                alert("Add images!");
+            if (!this.files.length) {
+                this.showSnackBar('Add images', 'red');
                 return;
             }
             this.loading = true;
             this.progress.loaded = 0;
-            this.progress.total = this.$refs.images.files.length;
+            this.progress.total = this.files.length;
             // const color = this.background.option == 'custom' ? this.background.selected.replace('#', "") : this.background.option;
 
             // if (['custom', 'automatic'].includes(this.background.option)) {
-            for (let image of this.$refs.images.files) {
+            for (let image of this.files) {
                 this.handleOffline(image)
             }
             // } else {
@@ -348,17 +414,68 @@ export default {
         canvas.height = this.dim;
         canvas.width = this.dim;
         this.ctx = canvas.getContext('2d');
+    },
+    created() {
+        this.count = Number(window.localStorage.getItem('converted-count') ?? 0);
     }
 
 }
 </script>
-<style>
+<style lang="scss">
 .convert-progress {
     position: fixed;
     top: 0;
     left: 0;
     z-index: 999;
     width: 100vw;
-    height: 5px;
+}
+
+.v-radio {
+    align-items: flex-start;
+}
+
+.file-input .v-input__append-inner {
+    align-self: center;
+    margin-top: 0;
+}
+
+.blur-range-slider label {
+    flex: unset !important;
+}
+
+.image-controls {
+    height: 100%;
+    display: flex;
+    justify-content: space-between;
+    opacity: 0;
+    transition: all 0.2s linear;
+
+    &:hover {
+        opacity: 1;
+    }
+
+    .left,
+    .right {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s linear;
+        background-color: rgba(0, 0, 0);
+        opacity: 0.1;
+        width: 20%;
+
+        &:hover {
+            opacity: 0.2;
+            background-color: rgba(0, 0, 0);
+        }
+    }
+
+    &.left-end .left {
+        opacity: 0;
+    }
+
+    &.right-end .right {
+        opacity: 0;
+    }
 }
 </style>
