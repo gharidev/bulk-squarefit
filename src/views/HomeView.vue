@@ -234,6 +234,9 @@ export default {
                 this.files = [];
                 window.localStorage.setItem('converted-count', this.count);
             }
+        },
+        'background.option': function (value) {
+            window.localStorage.setItem('selected-option', value);
         }
     },
     methods: {
@@ -417,6 +420,9 @@ export default {
     },
     created() {
         this.count = Number(window.localStorage.getItem('converted-count') ?? 0);
+        const option = window.localStorage.getItem('selected-option') ?? 'automatic';
+        if (['automatic', 'custom', 'blur', 'transparent'].includes(option))
+            this.background.option = option;
     }
 
 }
