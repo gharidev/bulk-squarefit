@@ -22,11 +22,12 @@ module.exports = defineConfig({
     // configure the workbox plugin
     // workboxPluginMode: 'InjectManifest',
     iconPaths: {
-      favicon32: './public/favicon-32x32.png',
-      favicon16: './public/favicon-16x16.png',
-      appleTouchIcon: './public/apple-touch-icon.png',
-      maskIcon: './public/safari-pinned-tab.svg',
-      msTileImage: './public/mstile-150x150.png'
+      faviconSVG: 'favicon.svg',
+      favicon32: 'favicon-32x32.png',
+      favicon16: 'favicon-16x16.png',
+      appleTouchIcon: 'apple-touch-icon.png',
+      maskIcon: 'safari-pinned-tab.svg',
+      msTileImage: 'mstile-150x150.png'
     },
   }
 })
