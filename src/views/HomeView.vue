@@ -361,7 +361,8 @@ export default {
                     this.progress.loaded++;
                     this.count++;
                     const extension = option == 'transparent' ? 'png' : 'jpeg';
-                    this.addToCompleted(this.ctx.canvas.toDataURL(`image/${extension}`), `Bulk-Squarefit ${new Date().toISOString().slice(0, 10)}-${this.count}.${extension}`);
+                    const imgId = `${this.count}`.padStart(4, '0');
+                    this.addToCompleted(this.ctx.canvas.toDataURL(`image/${extension}`), `Bulk-Squarefit ${new Date().toISOString().slice(0, 10)}-IMG${imgId}.${extension}`);
                 }
             }, false);
             reader.readAsDataURL(file);
