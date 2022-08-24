@@ -1,7 +1,7 @@
 {
     "start_url": "/bulk-squarefit/",
     "name": "Bulk SquareFit",
-    "short_name": "bulk-squarefit",
+    "short_name": "Bulk SquareFit",
     "icons": [
         {
             "src": "android-chrome-192x192.png",
