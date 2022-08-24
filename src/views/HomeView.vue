@@ -7,7 +7,9 @@
         <v-container>
             <v-row justify="center">
                 <v-col cols="12" md="6">
-                    <h3 class="text-center display-1">Bulk SquareFit</h3>
+                    <div>
+                        <v-img class="mx-auto" :src="require('../assets/bulk-squarefit.svg')" width="150"></v-img>
+                    </div>
                     <v-card class="my-3 rounded-xl">
                         <v-card-title class="justify-center">
                             Select Images
@@ -130,29 +132,6 @@
                             {{ error }}</li>
                     </ul>
                 </v-col>
-
-
-                <!-- Modal -->
-                <!-- <div class="modal fade" id="imagePreviewModal" tabindex="-1" aria-labelledby="imagePreviewModalLabel"
-                    aria-hidden="true">
-                    <div class="modal-dialog modal-dialog-centered">
-                        <div class="modal-content" v-if="previewIndex != null">
-                            <div class="modal-header">
-                                <h5 class="modal-title" id="imagePreviewModalLabel">Image Preview</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                    aria-label="Close"></button>
-                            </div>
-                            <div class="modal-body">
-                                <img :src="completed[previewIndex].url" alt="" class="img-fluid border">
-                            </div>
-                            <div class="modal-footer justify-content-center">
-                                <button type="button" class="btn btn-primary"
-                                    @click="downloadImage(previewIndex)">Download
-                                    {{ completed[previewIndex].downloaded ? 'again' : '' }}</button>
-                            </div>
-                        </div>
-                    </div>
-                </div> -->
 
             </v-row>
         </v-container>
